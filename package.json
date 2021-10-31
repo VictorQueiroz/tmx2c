@@ -1,0 +1,31 @@
+{
+  "name": "tmx2c",
+  "version": "0.0.3",
+  "description": "",
+  "author": "Victor Queiroz <victorcqueirozg@gmail.com>",
+  "license": "MIT",
+  "bin": {
+    "tmx2c":"./bin/index.js"
+  },
+  "files": [
+    "**/*.{map,d.ts,js}"
+  ],
+  "keywords": [
+    "tiled",
+    "2d",
+    "tiled-editor",
+    "xml",
+    "tmx",
+    "c99",
+    "c"
+  ],
+  "devDependencies": {
+    "@types/libxmljs": "0.18.x",
+    "@types/node": "16.x",
+    "ts-node": "10.x",
+    "typescript": "4.4.x"
+  },
+  "dependencies": {
+    "libxmljs": "0.19.x"
+  }
+}
