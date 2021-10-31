@@ -21,6 +21,7 @@ function printHelp() {
     cs.indentBlock(() => {
         cs.write('--delete-destination-directory        Force destination directory deletion\n');
         cs.write('--out-dir, -o                         Output directory. Defaults to: generated\n');
+        cs.write('--library-name                        Library name. Defaults to: maps\n');
         cs.write('-h, --help                            Print this\n');
     });
     process.stdout.write(cs.value());
@@ -32,13 +33,17 @@ function printHelp() {
         name: string;
         path: string
     }>();
+    let libraryName = 'maps';
     let outDir: string | null = null;
     let deleteDestinationDirectory = false;
     const args = Array.from(process.argv).slice(2);
     while(args.length) {
         const arg = args[0];
         assert.strict.ok(typeof arg === 'string');
-        if(arg === '--delete-destination-directory') {
+        if(arg === '--library-name') {
+            args.shift();
+            libraryName = arg;
+        } else if(arg === '--delete-destination-directory') {
             args.shift();
             deleteDestinationDirectory = true;
         } else if(arg.endsWith('.tmx')) {
@@ -101,7 +106,7 @@ function printHelp() {
             name,
             map
         })),
-        libraryName: 'maps'
+        libraryName
     });
     const files = generator.files();
     if(deleteDestinationDirectory) {
