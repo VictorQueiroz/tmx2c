@@ -42,7 +42,9 @@ function printHelp() {
         assert.strict.ok(typeof arg === 'string');
         if(arg === '--library-name') {
             args.shift();
-            libraryName = arg;
+            const newLibraryName = args.shift();
+            assert.strict.ok(typeof newLibraryName === 'string');
+            libraryName = newLibraryName;
         } else if(arg === '--delete-destination-directory') {
             args.shift();
             deleteDestinationDirectory = true;
