@@ -80,6 +80,8 @@ const mapMethods: IMapMethod[] = [
                     values: {
                         source: tileset => `"${tileset.source}"`,
                         tile_width: tileset => tileset.tileWidth,
+                        columns: tileset => tileset.columns,
+                        tile_count: tileset => tileset.tileCount,
                         tile_height: tileset => tileset.tileHeight,
                         firstgid: tileset => tileset.firstgid
                     },
@@ -102,26 +104,24 @@ const mapMethods: IMapMethod[] = [
                                 cs.write(`${freeMap.name(prefix)}(&map);\n`);
                                 cs.write(`return NULL;\n`);
                             },'}\n');
+                            // TODO: Set the entire n->data block to 0 and only set the offsets which actually contain something
+                            // to avoid submitting a bunch of unnecessary zeroes
                             cs.write('const uint32_t src[] = {\n', () => {
                                 let col = 0;
                                 for(let i = 0; i < layer.data.length; i++) {
                                     const n = layer.data[i];
+                                    const isLastByte = i === (layer.data.length - 1);
                                     assert.strict.ok(typeof n === 'number');
-                                    if(i === 0) {
-                                        cs.write('');
-                                    }
+                                    if(col === 0) cs.write('');
                                     cs.append(`${n}`);
-                                    if(i !== (layer.data.length - 1)) {
+                                    if(!isLastByte) {
                                         cs.append(',');
-                                    } else {
-                                        cs.append('\n');
-                                    }
-                                    if(col > 20) {
-                                        cs.append('\n');
-                                        cs.write('');
-                                        col = 0;
                                     }
                                     col++;
+                                    if(col > 20 || isLastByte) {
+                                        cs.append('\n');
+                                        col = 0;
+                                    }
                                 }
                             },'};\n');
                             cs.write(`memcpy(n->data,src,length);\n`);
@@ -256,6 +256,8 @@ export default class CodeGenerator extends CodeStream {
             cs.write('struct tiled_tileset_t {\n', () => {
                 cs.write('const char* source;\n');
                 cs.write('uint32_t tile_width;\n');
+                cs.write('uint32_t columns;\n');
+                cs.write('uint32_t tile_count;\n');
                 cs.write('uint32_t tile_height;\n');
                 cs.write('uint32_t firstgid;\n');
             },'};\n');

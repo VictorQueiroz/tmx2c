@@ -130,13 +130,18 @@ export default class TiledMap {
                 }
             }
             // FIXME: Of course this will only work for LE CPUs
-            const data = contents && new Uint32Array(Buffer.from(contents,'base64').buffer);
+            const original = contents && Buffer.from(contents,'base64');
+            assert.strict.ok(original);
+            const data = new Uint32Array(
+                original.buffer,
+                original.byteOffset,
+                original.byteLength / Uint32Array.BYTES_PER_ELEMENT
+            );
             const id = layerEl.attr('id');
             const name = layerEl.attr('name');
             const width = layerEl.attr('width');
             const height = layerEl.attr('height');
-            assert.strict.ok(data && width && height && name && id);
-            // console.log(contents &&Buffer.from(contents,'base64'),data,Array.from(data))
+            assert.strict.ok(width && height && name && id);
             this.#layers.push({
                 width: parseInt(width.value(),10),
                 height: parseInt(height.value(),10),
