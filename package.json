@@ -1,6 +1,6 @@
 {
   "name": "tmx2c",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "",
   "author": "Victor Queiroz <victorcqueirozg@gmail.com>",
   "license": "MIT",
@@ -10,6 +10,10 @@
   "files": [
     "**/*.{map,d.ts,js}"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VictorQueiroz/tmx2c.git"
+  },
   "keywords": [
     "tiled",
     "2d",
