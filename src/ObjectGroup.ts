@@ -18,7 +18,7 @@ export interface IPolygon {
     x: number;
     y: number;
     type: string | null;
-    points: [number,number][];
+    points: [string,string][];
 }
 
 export interface IObject {
@@ -67,13 +67,13 @@ export default class ObjectGroup {
                 if(pointsEl === null) {
                     return null;
                 }
-                const points = new Array<[number,number]>();
+                const points = new Array<[string,string]>();
                 for(const point of pointsEl.split(' ')) {
-                    const [x,y] = point.split(',').map(n => parseInt(n));
-                    if(!Number.isInteger(x) || !Number.isInteger(y)) {
-                        return null;
-                    }
-                    if(typeof x !== 'number' || typeof y !== 'number') {
+                    const [x,y] = point.split(',');
+                    if(
+                        typeof x !== 'string' || typeof y !== 'string' ||
+                        Number.isNaN(parseFloat(x)) || Number.isNaN(parseFloat(y))
+                    ) {
                         return null;
                     }
                     points.push([x,y]);

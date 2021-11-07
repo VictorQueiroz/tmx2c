@@ -431,11 +431,19 @@ export default class MapFileCodeGenerator extends CodeStream {
                     cs.write(`if(!${curr}->points) {\n`, () => {
                         exit();
                     },'}\n');
-                    cs.write(`${pointType} src[${p.points.length}] = {\n`, () => {
+                    cs.write(`const ${pointType} src[${p.points.length}] = {\n`, () => {
                         for(const point of p.points) {
+                            let [x,y] = point;
+                            const hasExplicitFractionalPart = /\.[0-9]+$/;
+                            if(!hasExplicitFractionalPart.test(x)) {
+                                x = `${x}.0`;
+                            }
+                            if(!hasExplicitFractionalPart.test(y)) {
+                                y = `${y}.0`;
+                            }
                             cs.write(`{\n`, () => {
-                                cs.write(`${point[0].toPrecision(10)}f,\n`);
-                                cs.write(`${point[1].toPrecision(10)}f\n`);
+                                cs.write(`${x}f,\n`);
+                                cs.write(`${y}f\n`);
                             },'}');
                             if(point !== p.points[p.points.length-1]) {
                                 cs.append(`,`);
