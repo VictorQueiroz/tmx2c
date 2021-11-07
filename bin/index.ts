@@ -9,6 +9,7 @@ import {
     CodeGenerator,
     CodeStream
 } from '../src';
+import { ITiledMap } from '../src/TiledMap';
 
 function printHelp() {
     const cs = new CodeStream();
@@ -28,7 +29,7 @@ function printHelp() {
 }
 
 (async () => {
-    const maps = new Map<string,TiledMap>();
+    const maps = new Map<string,ITiledMap>();
     const mapFiles = new Array<{
         name: string;
         path: string
@@ -95,22 +96,22 @@ function printHelp() {
         const root = document.root();
         assert.strict.ok(root);
         assert.strict.equal('map',root.name());
-        const map = new TiledMap({
+        const map = await new TiledMap({
             element: root,
             currentDirectory: path.dirname(mapFile.path)
-        });
-        await map.read();
+        }).read();
+        assert.strict.ok(map !== null);
         maps.set(mapFile.name,map);
     }
     const generator = new CodeGenerator();
-    generator.generate({
-        maps: Array.from(maps).map(([name,map]) => ({
+    const files = generator.generate({
+        maps: Array.from(maps).map(([name,value]) => ({
             name,
-            map
+            value
         })),
         libraryName
     });
-    const files = generator.files();
+    assert.strict.ok(files);
     if(deleteDestinationDirectory) {
         for(const file of files) {
             const final = path.resolve(

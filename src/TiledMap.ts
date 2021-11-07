@@ -1,35 +1,22 @@
-import assert from "assert";
-import { Element, Node } from "libxmljs";
-import path from "path";
-import fs from "fs";
+import { Element } from "libxmljs";
+import { isElement, isNumber, readInt } from "./utilities";
+import Tileset, { ITileset } from "./Tileset";
+import Layer, { ILayer } from "./Layer";
+import ObjectGroup, { IObjectGroup } from "./ObjectGroup";
 
-interface ITileset {
-    firstgid: number;
-    tileWidth: number;
-    tileHeight: number;
-    tileCount: number;
-    columns: number;
-    source: string;
-    name: string;
-}
-
-interface ILayer {
-    id: number;
-    name: string;
+export interface ITiledMap {
+    layers: ReadonlyArray<ILayer>;
+    tilesets: ReadonlyArray<ITileset>;
+    objectGroups: ReadonlyArray<IObjectGroup>;
     width: number;
     height: number;
-    data: ReadonlyArray<number>;
+    tileWidth: number;
+    tileHeight: number;
 }
 
 export default class TiledMap {
     readonly #element;
-    readonly #tilesets = new Array<ITileset>();
-    readonly #layers = new Array<ILayer>();
     readonly #currentDirectory;
-    #width = 0;
-    #height = 0;
-    #tileWidth = 0;
-    #tileHeight = 0;
     public constructor({
         element,
         currentDirectory
@@ -40,125 +27,72 @@ export default class TiledMap {
         this.#element = element;
         this.#currentDirectory = currentDirectory;
     }
-    public layers(): ReadonlyArray<ILayer> {
-        return Array.from(this.#layers);
-    }
-    public tilesets(): ReadonlyArray<ITileset> {
-        return Array.from(this.#tilesets);
-    }
-    public width() {
-        return this.#width;
-    }
-    public height() {
-        return this.#height;
-    }
-    public tileWidth() {
-        return this.#tileWidth;
-    }
-    public tileHeight() {
-        return this.#tileHeight;
-    }
-    public async read() {
-        const width = this.#element.attr('width');
-        const height = this.#element.attr('height');
-        const tileWidth = this.#element.attr('tilewidth');
-        const tileHeight = this.#element.attr('tileheight');
-        assert.strict.ok(
-            width && isValidNumber(width.value()) &&
-            height && isValidNumber(height.value()) &&
-            tileWidth && isValidNumber(tileWidth.value()) &&
-            tileHeight && isValidNumber(tileHeight.value())
-        );
-        this.#width = parseInt(width.value(),10);
-        this.#height = parseInt(height.value(),10);
-        this.#tileWidth = parseInt(tileWidth.value(),10);
-        this.#tileHeight = parseInt(tileHeight.value(),10);
-        await this.#readLayers();
-        await this.#readTilesets();
-    }
-    async #readTilesets() {
-        const tilesets = this.#element.find('tileset');
-        for(const tileset of tilesets) {
-            assert.strict.ok(isElement(tileset));
-            const firstgid = tileset.attr('firstgid');
-            const tileCount = tileset.attr('tilecount');
-            const tileWidth = tileset.attr('tilewidth');
-            const tileHeight = tileset.attr('tileheight');
-            const columns = tileset.attr('columns');
-            const name = tileset.attr('name');
-            assert.strict.ok(
-                columns && firstgid &&
-                tileCount && tileWidth &&
-                tileHeight && name
-            );
-            assert.strict.ok([
-                columns,
-                firstgid,
-                tileCount,
-                tileWidth,
-                tileHeight
-            ].every(n => isValidNumber(n.value())));
-            const img = tileset.get('image');
-            const source = img?.attr('source');
-            assert.strict.ok(source);
-            const targetFile = path.resolve(this.#currentDirectory,source.value());
-            await fs.promises.access(targetFile,fs.constants.R_OK);
-            this.#tilesets.push({
-                source: source.value(),
-                firstgid: parseInt(firstgid.value(),10),
-                name: name.value(),
-                tileHeight: parseInt(tileHeight.value(),10),
-                columns: parseInt(columns.value(),10),
-                tileWidth: parseInt(tileWidth.value(),10),
-                tileCount: parseInt(tileCount.value(),10),
-            });
+    public async read(): Promise<ITiledMap | null> {
+        const width = readInt(this.#element, 'width');
+        const height = readInt(this.#element, 'height');
+        const tileWidth = readInt(this.#element, 'tilewidth');
+        const tileHeight = readInt(this.#element, 'tileheight');
+        const layers = this.#readLayers();
+        const tilesets = await this.#readTilesets();
+        if(
+            !tilesets || !layers ||
+            !isNumber(width) || !isNumber(height) ||
+            !isNumber(tileWidth) || !isNumber(tileHeight)
+        ) {
+            return null;
         }
-    }
-    async #readLayers() {
-        const layerEls = this.#element.find('layer');
-        for(const layerEl of layerEls) {
-            assert.strict.ok(isElement(layerEl));
-            const dataEl = layerEl.get('data');
-            assert.strict.ok(dataEl && dataEl.attr('encoding')?.value() === 'base64');
-            const nodes = dataEl.childNodes();
-            assert.strict.ok(nodes.length >= 1);
-            let contents: string | undefined;
-            for(const node of nodes) {
-                if(node.type() === 'text') {
-                    contents = node.toString();
-                    break;
-                }
+        const objectGroups = new Array<IObjectGroup>();
+        for(const el of this.#element.find('objectgroup')) {
+            if(!isElement(el)){
+                return null;
             }
-            // FIXME: Of course this will only work for LE CPUs
-            const original = contents && Buffer.from(contents,'base64');
-            assert.strict.ok(original);
-            const data = new Uint32Array(
-                original.buffer,
-                original.byteOffset,
-                original.byteLength / Uint32Array.BYTES_PER_ELEMENT
-            );
-            const id = layerEl.attr('id');
-            const name = layerEl.attr('name');
-            const width = layerEl.attr('width');
-            const height = layerEl.attr('height');
-            assert.strict.ok(width && height && name && id);
-            this.#layers.push({
-                width: parseInt(width.value(),10),
-                height: parseInt(height.value(),10),
-                id: parseInt(id.value(),10),
-                name: name.value(),
-                data: Array.from(data)
-            });
+            const objectGroup = new ObjectGroup(el).read();
+            if(!objectGroup) {
+                return null;
+            }
+            objectGroups.push(objectGroup);
         }
-        return true;
+        return {
+            width,
+            height,
+            objectGroups,
+            tileWidth,
+            tileHeight,
+            tilesets,
+            layers
+        };
     }
-}
-
-function isValidNumber(val: string) {
-    const n = parseInt(val,10);
-    return !Number.isNaN(n) && Number.isFinite(n);
-}
-
-function isElement(el: Node): el is Element {
-    return el.type() === 'element';
+    async #readTilesets(): Promise<ReadonlyArray<ITileset> | null> {
+        const tilesetElements = this.#element.find('tileset');
+        const tilesets = new Array<ITileset>();
+        for(const tilesetEl of tilesetElements) {
+            if(!tilesetEl || !isElement(tilesetEl)) {
+                return null;
+            }
+            const tileset = await new Tileset({
+                element: tilesetEl,
+                currentDirectory: this.#currentDirectory
+            }).read();
+            if(!tileset) {
+                return null;
+            }
+            tilesets.push(tileset);
+        }
+        return tilesets;
+    }
+    #readLayers(): ReadonlyArray<ILayer> | null {
+        const layerEls = this.#element.find('layer').map(el => isElement(el) && new Layer(el));
+        const layers = new Array<ILayer>();
+        for(const layer of layerEls) {
+            if(!layer) {
+                return null;
+            }
+            const data = layer.read();
+            if(!data) {
+                return null;
+            }
+            layers.push(data);
+        }
+        return layers;
+    }
 }
