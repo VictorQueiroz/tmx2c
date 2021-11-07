@@ -9,6 +9,16 @@
  <tileset firstgid="248" name="Decorations (32x32)" tilewidth="32" tileheight="32" tilecount="42" columns="7">
   <image source="Sprites/14-TileSets/Decorations (32x32).png" width="224" height="192"/>
   <tile id="8">
+   <properties>
+    <property name="prop1" value="xxx"/>
+    <property name="prop2" type="object" value="0"/>
+    <property name="prop3" type="int" value="1000000000"/>
+    <property name="prop4" type="file" value="Sprites/04-Pig Throwing a Box/Run (26x30).png"/>
+    <property name="prop5" type="float" value="1e-6"/>
+    <property name="prop6" type="color" value="#ff55ff00"/>
+    <property name="prop7" type="bool" value="true"/>
+    <property name="prop8" type="bool" value="false"/>
+   </properties>
    <objectgroup draworder="index" id="2">
     <object id="1" x="3" y="0" width="26" height="32"/>
    </objectgroup>
@@ -63,6 +73,20 @@
     <object id="1" x="3" y="0" width="26" height="25"/>
    </objectgroup>
   </tile>
+  <tile id="23">
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="32" y="32">
+     <polygon points="0,0 -23.125,0 -23.0078,-16.0078 -22.0111,-16 -22.0051,-18.0099 -20.9952,-17.9946 -21.0066,-20.0078 -20.0096,-20 -20.0111,-21 -19.0069,-21.0012 -19.0006,-22.0084 -18.0039,-22.0117 -18.0039,-23.0117 -16,-22.9922 -16,-24.0117 -14.0078,-24.0078 -14.0117,-25.0117 0,-25"/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="24">
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="0" y="32">
+     <polygon points="0,0 11.0078,0 11,-16.0117 9.99444,-16.0056 10,-18.0056 9,-18.0056 9.00556,-20.0111 8,-20 8.00556,-21.0089 7.00556,-21.0111 7.0033,-22.0049 6,-22.0111 5.99835,-23.0105 4.00556,-23.0111 3.99774,-24.0049 2,-24.0033 1.99774,-25.0082 0.00555556,-25.0049"/>
+    </object>
+   </objectgroup>
+  </tile>
   <tile id="25">
    <objectgroup draworder="index" id="2">
     <object id="1" x="9" y="7" width="23" height="25"/>
@@ -71,6 +95,20 @@
   <tile id="29">
    <objectgroup draworder="index" id="2">
     <object id="1" x="3" y="0" width="26" height="25"/>
+   </objectgroup>
+  </tile>
+  <tile id="30">
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="32" y="0">
+     <polygon points="0,0 -0.0434783,18.0435 -22,17.9961 -22,16.9961 -22.9778,16.9889 -23,-0.0111111"/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="31">
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="0" y="0">
+     <polygon points="0,0 0.015625,18 10.0156,18.0156 10,17 11.0156,17 11,-0.015625"/>
+    </object>
    </objectgroup>
   </tile>
   <tile id="32">

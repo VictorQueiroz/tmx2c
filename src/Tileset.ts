@@ -121,7 +121,11 @@ export default class Tileset {
         };
         const objectGroupEl = tileEl.get('objectgroup');
         if(objectGroupEl) {
-            tile.objectGroup = new ObjectGroup(objectGroupEl).read();
+            const objectGroup = new ObjectGroup(objectGroupEl).read();
+            if(!objectGroup) {
+                return null;
+            }
+            tile.objectGroup = objectGroup;
         }
         return tile;
     }

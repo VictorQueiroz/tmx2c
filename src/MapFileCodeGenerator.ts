@@ -199,6 +199,9 @@ export default class MapFileCodeGenerator extends CodeStream {
                         }
                     })
                 ] as ISetArrayItemsDescription[]) {
+                    if(!item.list.length) {
+                        continue;
+                    }
                     cs.write('{\n', () => {
                         cs.write(`${item.type}* n = map->${item.property};\n`);
                         for(const n of item.list) {
@@ -330,6 +333,11 @@ export default class MapFileCodeGenerator extends CodeStream {
         value: string;
     }) {
         this.write(`if(${options.value}) {\n`, () => {
+            const polygons = `${options.value}->polygons`;
+            this.write(`for(uint32_t h = 0; h < ${options.value}->polygon_count; h++) {\n`, () => {
+                this.write(`free(${polygons}[h].points);\n`);
+            },'}\n');
+            this.write(`free(${polygons});\n`);
             this.write(`free(${options.value}->objects);\n`);
             this.write(`free(${options.value});\n`);
         },'}\n');
@@ -348,42 +356,100 @@ export default class MapFileCodeGenerator extends CodeStream {
             cs.write(`${value} = NULL;\n`);
             return;
         }
-        const objectType = this.#fileManager.require('struct tiled_object_t');
+        const objectCountVarName = `${value}->object_count`;
+        const objectsVarName = `${value}->objects`;
         const objectGroupType = this.#fileManager.require('struct tiled_object_group_t');
         cs.write(`${value} = malloc(1 * sizeof(${objectGroupType}));\n`);
         cs.write(`if(!${value}) {\n`, () => {
             exit();
         },'}\n');
-        if(objectGroup.name !== null) {
-            cs.write(`${value}->name = "${objectGroup.name}";\n`);
-        } else {
-            cs.write(`${value}->name = NULL;\n`);
-        }
-        cs.write(`${value}->object_count = ${objectGroup.objects.length};\n`);
-        const objectsVarName = `${value}->objects`;
-        cs.write(`${objectsVarName} = malloc(${objectGroup.objects.length} * sizeof(${objectType}));\n`);
-        cs.write(`if(!${objectsVarName}) {\n`, () => {
-            exit();
-        },'}\n');
-        cs.write('{\n', () => {
-            const currentObjVarName = 'o_';
-            cs.write(`${objectType}* ${currentObjVarName} = ${objectsVarName};\n`);
-            for(const obj of objectGroup.objects) {
-                cs.write(`${currentObjVarName}->id = ${obj.id};\n`);
-                cs.write(`${currentObjVarName}->position[0] = ${obj.x};\n`);
-                cs.write(`${currentObjVarName}->position[1] = ${obj.y};\n`);
-                cs.write(`${currentObjVarName}->size[0] = ${obj.width};\n`);
-                cs.write(`${currentObjVarName}->size[1] = ${obj.height};\n`);
-                if(obj.type !== null) {
-                    cs.write(`${currentObjVarName}->type = "${obj.type}";\n`);
-                } else {
-                    cs.write(`${currentObjVarName}->type = NULL;\n`);
-                }
-                if(obj !== objectGroup.objects[objectGroup.objects.length-1]) {
-                    cs.write(`${currentObjVarName}++;\n`);
-                }
+        if(objectGroup.objects.length) {
+            const objectType = this.#fileManager.require('struct tiled_object_t');
+            cs.write(`${objectCountVarName} = ${objectGroup.objects.length};\n`);
+            if(objectGroup.name !== null) {
+                cs.write(`${value}->name = "${objectGroup.name}";\n`);
+            } else {
+                cs.write(`${value}->name = NULL;\n`);
             }
-        },'}\n');
+            cs.write(`${objectsVarName} = malloc(${objectGroup.objects.length} * sizeof(${objectType}));\n`);
+            cs.write(`if(!${objectsVarName}) {\n`, () => {
+                exit();
+            },'}\n');
+            cs.write('{\n', () => {
+                const currentObjVarName = 'o_';
+                cs.write(`${objectType}* ${currentObjVarName} = ${objectsVarName};\n`);
+                for(const obj of objectGroup.objects) {
+                    cs.write(`${currentObjVarName}->id = ${obj.id};\n`);
+                    cs.write(`${currentObjVarName}->position[0] = ${obj.x};\n`);
+                    cs.write(`${currentObjVarName}->position[1] = ${obj.y};\n`);
+                    cs.write(`${currentObjVarName}->size[0] = ${obj.width};\n`);
+                    cs.write(`${currentObjVarName}->size[1] = ${obj.height};\n`);
+                    if(obj.type !== null) {
+                        cs.write(`${currentObjVarName}->type = "${obj.type}";\n`);
+                    } else {
+                        cs.write(`${currentObjVarName}->type = NULL;\n`);
+                    }
+                    if(obj !== objectGroup.objects[objectGroup.objects.length-1]) {
+                        cs.write(`${currentObjVarName}++;\n`);
+                    }
+                }
+            },'}\n');
+        } else {
+            cs.write(`${objectCountVarName} = 0;\n`);
+            cs.write(`${objectsVarName} = NULL;\n`);
+        }
+        /**
+         * Add polygon objects
+         */
+        const polygonType = this.#fileManager.require('struct tiled_polygon_t');
+        const polygonsVarName = `${value}->polygons`;
+        const polygons = objectGroup.polygons;
+        cs.write(`${value}->polygon_count = ${polygons.length};\n`);
+        if(!polygons.length) {
+            cs.write(`${polygonsVarName} = NULL;\n`);
+        } else {
+            cs.write(`${polygonsVarName} = malloc(${polygons.length} * sizeof(${polygonType}));\n`);
+            cs.write(`if(!${polygonsVarName}) {\n`,() => {
+                exit();
+            },'}\n');
+            cs.write('{\n', () => {
+                const curr = 'polygon';
+                cs.write(`${polygonType}* ${curr} = ${polygonsVarName};\n`);
+                for(const p of polygons) {
+                    cs.write(`${curr}->id = ${p.id};\n`);
+                    cs.write(`${curr}->position[0] = ${p.x};\n`);
+                    cs.write(`${curr}->position[1] = ${p.y};\n`);
+                    if(p.type !== null) {
+                        cs.write(`${curr}->type = "${p.type}";\n`);
+                    } else {
+                        cs.write(`${curr}->type = NULL;\n`);
+                    }
+                    const pointType = this.#fileManager.require('struct tiled_point_t');
+                    const pointListByteLength = `${p.points.length} * sizeof(${pointType})`;
+                    cs.write(`${curr}->point_count = ${p.points.length};\n`);
+                    cs.write(`${curr}->points = malloc(${pointListByteLength});\n`);
+                    cs.write(`if(!${curr}->points) {\n`, () => {
+                        exit();
+                    },'}\n');
+                    cs.write(`${pointType} src[${p.points.length}] = {\n`, () => {
+                        for(const point of p.points) {
+                            cs.write(`{\n`, () => {
+                                cs.write(`${point[0].toPrecision(10)}f,\n`);
+                                cs.write(`${point[1].toPrecision(10)}f\n`);
+                            },'}');
+                            if(point !== p.points[p.points.length-1]) {
+                                cs.append(`,`);
+                            }
+                            cs.append('\n');
+                        }
+                    },'};\n');
+                    cs.write(`memcpy(${curr}->points,src,${pointListByteLength});\n`);
+                    if(p !== polygons[polygons.length-1]) {
+                        cs.write(`${curr}++;\n`);
+                    }
+                }
+            },'}\n');
+        }
     }
     
 }

@@ -10,6 +10,15 @@ export interface IObjectGroup {
     id: number;
     name: string | null;
     objects: ReadonlyArray<IObject>;
+    polygons: ReadonlyArray<IPolygon>;
+}
+
+export interface IPolygon {
+    id: number;
+    x: number;
+    y: number;
+    type: string | null;
+    points: [number,number][];
 }
 
 export interface IObject {
@@ -37,6 +46,7 @@ export default class ObjectGroup {
         if(groupId === null) {
             return null;
         }
+        const polygons = new Array<IPolygon>();
         for(const objEl of objectElements) {
             if(!isElement(objEl)) {
                 return null;
@@ -44,14 +54,42 @@ export default class ObjectGroup {
             const objId = readInt(objEl,'id');
             const x = readInt(objEl,'x');
             const y = readInt(objEl,'y');
-            const width = readInt(objEl,'width');
+            const polygonEl = objEl.get('polygon');
             const type = readString(objEl,'type');
+            if(!isNumber(objId) || !isNumber(x) || !isNumber(y)) {
+                return null;
+            }
+            if(polygonEl) {
+                if(!isElement(polygonEl)) {
+                    return null;
+                }
+                const pointsEl = readString(polygonEl,'points');
+                if(pointsEl === null) {
+                    return null;
+                }
+                const points = new Array<[number,number]>();
+                for(const point of pointsEl.split(' ')) {
+                    const [x,y] = point.split(',').map(n => parseInt(n));
+                    if(!Number.isInteger(x) || !Number.isInteger(y)) {
+                        return null;
+                    }
+                    if(typeof x !== 'number' || typeof y !== 'number') {
+                        return null;
+                    }
+                    points.push([x,y]);
+                }
+                polygons.push({
+                    id: objId,
+                    x,
+                    y,
+                    type,
+                    points
+                });
+                continue;
+            }
+            const width = readInt(objEl,'width');
             const height = readInt(objEl,'height');
-            if(
-                !isNumber(objId) ||
-                !isNumber(x) || !isNumber(y) ||
-                !isNumber(width) || !isNumber(height)
-            ) {
+            if(!isNumber(width) || !isNumber(height)) {
                 return null;
             }
             objects.push({
@@ -65,6 +103,7 @@ export default class ObjectGroup {
         }
         return {
             objects,
+            polygons,
             id: groupId,
             name
         };

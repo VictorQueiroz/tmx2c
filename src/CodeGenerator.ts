@@ -84,11 +84,24 @@ export default class CodeGenerator extends CodeStream {
             this.write(`uint32_t size[2];\n`);
             this.write(`const char* type;\n`);
         },'};\n');
+        this.write(`${this.#define('struct tiled_polygon_t')} {\n`, () => {
+            this.write(`uint32_t id;\n`);
+            this.write(`uint32_t position[2];\n`);
+            this.write(`const char* type;\n`);
+            this.write(`uint32_t point_count;\n`);
+            this.write(`struct tiled_point_t* points;\n`);
+        },'};\n');
+        this.write(`${this.#define('struct tiled_point_t')} {\n`, () => {
+            this.write('float x;\n');
+            this.write('float y;\n');
+        },'};\n');
         this.write(`${this.#define('struct tiled_object_group_t')} {\n`, () => {
             this.write(`uint32_t id;\n`);
             this.write(`const char* name;\n`);
             this.write(`uint32_t object_count;\n`);
             this.write(`struct tiled_object_t* objects;\n`);
+            this.write(`uint32_t polygon_count;\n`);
+            this.write(`struct tiled_polygon_t* polygons;\n`);
         },'};\n');
         // const objectGroupFunctions: IFunction<{}>[] = [
         //     {
