@@ -3,9 +3,11 @@ import ObjectGroup, { IObjectGroup } from "./ObjectGroup";
 import fs from 'fs';
 import { isElement, isNumber, isString, readInt, readString } from "./utilities";
 import path from "path";
+import Properties, { Property } from "./Properties";
 
 interface ITile {
     id: number;
+    properties: ReadonlyMap<string,Property>;
     objectGroup: IObjectGroup | null;
 }
 
@@ -115,8 +117,19 @@ export default class Tileset {
         if(id === null) {
             return null;
         }
+        let properties: ReadonlyMap<string, Property> | null;
+        const propsEl = tileEl.get('properties');
+        if(!propsEl) {
+            properties = new Map();
+        } else {
+            properties = new Properties(propsEl).read();
+        }
+        if(!properties) {
+            return null;
+        }
         const tile: ITile = {
             id,
+            properties,
             objectGroup: null
         };
         const objectGroupEl = tileEl.get('objectgroup');

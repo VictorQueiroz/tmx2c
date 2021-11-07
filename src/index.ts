@@ -1,9 +1,9 @@
 export {
     default as CodeGenerator
-} from './CodeGenerator';
+} from './code-generator/CodeGenerator';
 export {
     default as CodeStream
-} from './CodeStream';
+} from './code-generator/CodeStream';
 export {
     default as TiledMap
 } from './TiledMap';

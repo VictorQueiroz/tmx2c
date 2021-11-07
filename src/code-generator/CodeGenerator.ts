@@ -1,7 +1,7 @@
 import CodeStream from "./CodeStream";
 import FileManager from "./FileManager";
 import MapFileCodeGenerator from "./MapFileCodeGenerator";
-import { ITiledMap } from "./TiledMap";
+import { ITiledMap } from "../TiledMap";
 
 export interface IMapFileGenerationContext {
     cs: CodeStream;
@@ -78,18 +78,52 @@ export default class CodeGenerator extends CodeStream {
     }
     #generateObjectFile() {
         this.#require('<stdint.h>');
+        this.#require('<stdbool.h>');
+        this.write(`${this.#define('enum tiled_object_property_type_t')} {\n`, () => {
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_STRING,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_INT,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_OBJECT,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_FILE,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_FLOAT,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_COLOR,\n`);
+            this.write(`TILED_OBJECT_PROPERTY_TYPE_BOOL\n`);
+        },'};\n');
+        this.write(`${this.#define('struct tiled_color_t')} {\n`, () => {
+            this.write('uint32_t r;\n');
+            this.write('uint32_t g;\n');
+            this.write('uint32_t b;\n');
+            this.write('uint32_t a;\n');
+        },'};\n');
+        this.write(`${this.#define('struct tiled_object_property_t')} {\n`, () => {
+            this.write('const char* name;\n');
+            this.write('enum tiled_object_property_type_t type;\n');
+            this.write('union {\n', () => {
+                this.write(`struct tiled_color_t color_value;\n`);
+                this.write(`const char* string_value;\n`);
+                this.write(`int64_t int_value;\n`);
+                this.write(`uint32_t uint32_value;\n`);
+                this.write(`float float_value;\n`);
+                this.write(`bool bool_value;\n`);
+            },'} data;\n');
+        },'};\n');
         this.write(`${this.#define('struct tiled_object_t')} {\n`, () => {
+            const propertyType = this.#require('struct tiled_object_property_t');
             this.write(`uint32_t id;\n`);
             this.write(`uint32_t position[2];\n`);
             this.write(`uint32_t size[2];\n`);
             this.write(`const char* type;\n`);
+            this.write('uint32_t property_count;\n');
+            this.write(`${propertyType}* properties;\n`);
         },'};\n');
         this.write(`${this.#define('struct tiled_polygon_t')} {\n`, () => {
+            const propertyType = this.#require('struct tiled_object_property_t');
             this.write(`uint32_t id;\n`);
             this.write(`uint32_t position[2];\n`);
             this.write(`const char* type;\n`);
             this.write(`uint32_t point_count;\n`);
             this.write(`struct tiled_point_t* points;\n`);
+            this.write('uint32_t property_count;\n');
+            this.write(`${propertyType}* properties;\n`);
         },'};\n');
         this.write(`${this.#define('struct tiled_point_t')} {\n`, () => {
             this.write('float x;\n');
@@ -103,15 +137,6 @@ export default class CodeGenerator extends CodeStream {
             this.write(`uint32_t polygon_count;\n`);
             this.write(`struct tiled_polygon_t* polygons;\n`);
         },'};\n');
-        // const objectGroupFunctions: IFunction<{}>[] = [
-        //     {
-        //         id: 'alloc',
-        //         name: () => `tiled_object_group_alloc`,
-        //         header() {
-        //             return `struct tiled_object_group_t* ${this.name()}()`;
-        //         }
-        //     }
-        // ];
         this.#commit('object.h');
     }
     #require(name: string) {
@@ -150,29 +175,21 @@ export default class CodeGenerator extends CodeStream {
     #generateHeader() {
         const cs = this;
         cs.write('#include <stdint.h>\n\n');
-        cs.write(`${this.#define('struct tiled_tile_object_t')} {\n`, () => {
-            cs.write(`uint32_t id;\n`);
-            cs.write('/**\n');
-            cs.write(' * x and y properties\n');
-            cs.write(' */\n');
-            cs.write(`uint32_t position[2];\n`);
-            cs.write('/**\n');
-            cs.write(' * width and height properties\n');
-            cs.write(' */\n');
-            cs.write(`uint32_t size[2];\n`);
-        },`};\n`);
         cs.write(`${this.#define('struct tiled_tileset_tile_t')} {\n`, () => {
             cs.write('uint32_t id;\n');
             cs.write(`${this.#require('struct tiled_object_group_t')}* object_group;\n`);
+            cs.write('uint32_t property_count;\n');
+            cs.write(`${this.#require('struct tiled_object_property_t')}* properties;\n`);
         },`};\n`);
         cs.write(`${this.#define('struct tiled_tileset_t')} {\n`, () => {
+            const tileType = 'struct tiled_tileset_tile_t';
             cs.write('const char* source;\n');
             cs.write('uint32_t tile_width;\n');
             cs.write('uint32_t columns;\n');
             cs.write('uint32_t tile_height;\n');
             cs.write('uint32_t firstgid;\n');
             cs.write('uint32_t tile_count;\n');
-            cs.write('struct tiled_tileset_tile_t* tiles;\n');
+            cs.write(`${tileType}* tiles;\n`);
         },'};\n');
         cs.write(`${this.#define('struct tiled_layer_t')} {\n`, () => {
             cs.write('uint32_t id;\n');
@@ -182,6 +199,7 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t* data;\n');
         },'};\n');
         cs.write(`${this.#define('struct tiled_map_t')} {\n`, () => {
+            const layerType = 'struct tiled_layer_t';
             cs.write('uint32_t width;\n');
             cs.write('uint32_t height;\n');
             cs.write('uint32_t tile_width;\n');
@@ -189,7 +207,7 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t tileset_count;\n');
             cs.write('struct tiled_tileset_t* tilesets;\n');
             cs.write('uint32_t layer_count;\n');
-            cs.write('struct tiled_layer_t* layers;\n');
+            cs.write(`${layerType}* layers;\n`);
             cs.write('uint32_t object_group_count;\n');
             cs.write(`${this.#require('struct tiled_object_group_t')}** object_groups;\n`);
         },'};\n');

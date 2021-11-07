@@ -2,8 +2,11 @@ import assert from "assert";
 import path from "path";
 import CodeStream from "./CodeStream";
 import FileManager from "./FileManager";
-import { IObjectGroup } from "./ObjectGroup";
-import { ITiledMap } from "./TiledMap";
+import { IObjectGroup } from "../ObjectGroup";
+import { Property, PropertyType } from "../Properties";
+import { ITiledMap } from "../TiledMap";
+import { jsNumberToCFloat } from "./utilities";
+
 
 export interface IFunction<T = void> {
     /**
@@ -89,7 +92,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                         continue;
                     }
                     cs.write(`map->${item.countProperty} = ${item.length};\n`);
-                    cs.write(`map->${item.property} = malloc(${item.length} * sizeof(${item.type}));\n`);
+                    cs.write(`map->${item.property} = calloc(${item.length}, sizeof(${item.type}));\n`);
                     cs.write(`if(!map->${item.property}) {\n`, () => {
                         cs.write(`${freeMap.name(ctx)}(&map);\n`);
                         cs.write('return NULL;\n');
@@ -118,8 +121,8 @@ export default class MapFileCodeGenerator extends CodeStream {
                                 cs.write(`n->tile_count = 0;\n`);
                                 return;
                             }
-                            cs.write(`n->tiles = malloc(${tileset.tiles.length} * sizeof(struct tiled_tileset_tile_t));\n`);
                             cs.write(`n->tile_count = ${tileset.tiles.length};\n`);
+                            cs.write(`n->tiles = calloc(n->tile_count, sizeof(struct tiled_tileset_tile_t));\n`);
                             cs.write(
                                 `if(n->tiles == NULL) {\n`,
                                 () => {
@@ -137,6 +140,12 @@ export default class MapFileCodeGenerator extends CodeStream {
                                         value: `${tileVarName}->object_group`,
                                         exit: writeFatalErrorExit,
                                         objectGroup: tile.objectGroup
+                                    });
+                                    this.#populateProperties({
+                                        value: `${tileVarName}->properties`,
+                                        exit: writeFatalErrorExit,
+                                        properties: tile.properties,
+                                        count: `${tileVarName}->property_count`
                                     });
                                     if(tile !== tileset.tiles[tileset.tiles.length-1]) {
                                         cs.write(`${tileVarName}++;\n`);
@@ -170,7 +179,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                         extra: (layer) => {
                             cs.write('{\n', () => {
                                 cs.write(`const uint32_t length = ${layer.data.length} * sizeof(uint32_t);\n`);
-                                cs.write(`n->data = malloc(length);\n`);
+                                cs.write(`n->data = calloc(${layer.data.length},sizeof(uint32_t));\n`);
                                 cs.write(`if(!n->data) {\n`, () => {
                                     writeFatalErrorExit();
                                 },'}\n');
@@ -260,6 +269,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                         this.#freeObjectGroup({
                             value: `tile->object_group`
                         });
+                        cs.write('free(tile->properties);\n');
                     },'}\n');
                     cs.write('free(tileset->tiles);\n');
                 },'}\n');
@@ -338,6 +348,9 @@ export default class MapFileCodeGenerator extends CodeStream {
                 this.write(`free(${polygons}[h].points);\n`);
             },'}\n');
             this.write(`free(${polygons});\n`);
+            this.write(`for(uint32_t h = 0; h < ${options.value}->object_count; h++) {\n`, () => {
+                this.write(`free(${options.value}->objects[h].properties);\n`);
+            },'}\n');
             this.write(`free(${options.value}->objects);\n`);
             this.write(`free(${options.value});\n`);
         },'}\n');
@@ -359,7 +372,7 @@ export default class MapFileCodeGenerator extends CodeStream {
         const objectCountVarName = `${value}->object_count`;
         const objectsVarName = `${value}->objects`;
         const objectGroupType = this.#fileManager.require('struct tiled_object_group_t');
-        cs.write(`${value} = malloc(1 * sizeof(${objectGroupType}));\n`);
+        cs.write(`${value} = calloc(1, sizeof(${objectGroupType}));\n`);
         cs.write(`if(!${value}) {\n`, () => {
             exit();
         },'}\n');
@@ -371,7 +384,7 @@ export default class MapFileCodeGenerator extends CodeStream {
             } else {
                 cs.write(`${value}->name = NULL;\n`);
             }
-            cs.write(`${objectsVarName} = malloc(${objectGroup.objects.length} * sizeof(${objectType}));\n`);
+            cs.write(`${objectsVarName} = calloc(${objectGroup.objects.length}, sizeof(${objectType}));\n`);
             cs.write(`if(!${objectsVarName}) {\n`, () => {
                 exit();
             },'}\n');
@@ -389,6 +402,12 @@ export default class MapFileCodeGenerator extends CodeStream {
                     } else {
                         cs.write(`${currentObjVarName}->type = NULL;\n`);
                     }
+                    this.#populateProperties({
+                        exit,
+                        properties: obj.properties,
+                        count: `${currentObjVarName}->property_count`,
+                        value: `${currentObjVarName}->properties`
+                    });
                     if(obj !== objectGroup.objects[objectGroup.objects.length-1]) {
                         cs.write(`${currentObjVarName}++;\n`);
                     }
@@ -408,7 +427,7 @@ export default class MapFileCodeGenerator extends CodeStream {
         if(!polygons.length) {
             cs.write(`${polygonsVarName} = NULL;\n`);
         } else {
-            cs.write(`${polygonsVarName} = malloc(${polygons.length} * sizeof(${polygonType}));\n`);
+            cs.write(`${polygonsVarName} = calloc(${polygons.length}, sizeof(${polygonType}));\n`);
             cs.write(`if(!${polygonsVarName}) {\n`,() => {
                 exit();
             },'}\n');
@@ -425,25 +444,18 @@ export default class MapFileCodeGenerator extends CodeStream {
                         cs.write(`${curr}->type = NULL;\n`);
                     }
                     const pointType = this.#fileManager.require('struct tiled_point_t');
-                    const pointListByteLength = `${p.points.length} * sizeof(${pointType})`;
+                    // const pointListByteLength = `${p.points.length} * sizeof(${pointType})`;
                     cs.write(`${curr}->point_count = ${p.points.length};\n`);
-                    cs.write(`${curr}->points = malloc(${pointListByteLength});\n`);
+                    cs.write(`${curr}->points = calloc(${curr}->point_count, sizeof(${pointType}));\n`);
                     cs.write(`if(!${curr}->points) {\n`, () => {
                         exit();
                     },'}\n');
                     cs.write(`const ${pointType} src[${p.points.length}] = {\n`, () => {
                         for(const point of p.points) {
-                            let [x,y] = point;
-                            const hasExplicitFractionalPart = /\.[0-9]+$/;
-                            if(!hasExplicitFractionalPart.test(x)) {
-                                x = `${x}.0`;
-                            }
-                            if(!hasExplicitFractionalPart.test(y)) {
-                                y = `${y}.0`;
-                            }
+                            const [x,y] = point;
                             cs.write(`{\n`, () => {
-                                cs.write(`${x}f,\n`);
-                                cs.write(`${y}f\n`);
+                                cs.write(`${jsNumberToCFloat(x)},\n`);
+                                cs.write(`${jsNumberToCFloat(y)}\n`);
                             },'}');
                             if(point !== p.points[p.points.length-1]) {
                                 cs.append(`,`);
@@ -451,7 +463,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                             cs.append('\n');
                         }
                     },'};\n');
-                    cs.write(`memcpy(${curr}->points,src,${pointListByteLength});\n`);
+                    cs.write(`memcpy(${curr}->points, src, ${curr}->point_count * sizeof(${pointType}));\n`);
                     if(p !== polygons[polygons.length-1]) {
                         cs.write(`${curr}++;\n`);
                     }
@@ -459,5 +471,77 @@ export default class MapFileCodeGenerator extends CodeStream {
             },'}\n');
         }
     }
-    
+    #populateProperties({
+        value,
+        exit,
+        properties,
+        count
+    }: {
+        properties: ReadonlyMap<string,Property>;
+        value: string;
+        count: string;
+        exit(): void;
+    }) {
+        if(!properties.size) {
+            this.write(`${count} = 0;\n`);
+            this.write(`${value} = NULL;\n`);
+            return;
+        }
+        const propertyType = this.#fileManager.require('struct tiled_object_property_t');
+        this.write(`${count} = ${properties.size};\n`);
+        this.write(`${value} = calloc(${count}, sizeof(${propertyType}));\n`);
+        this.write(`if(!${value}) {\n`, () => {
+            exit();
+        },'}\n');
+        this.write(`{\n`, () => {
+            this.write(`${propertyType}* prop = ${value};\n`);
+            const list = Array.from(properties.values());
+            for(const [key,prop] of properties) {
+                let propType: string;
+                const data = `prop->data`;
+                switch(prop.type) {
+                    case PropertyType.Bool:
+                        this.write(`${data}.bool_value = ${prop.value};\n`);
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_BOOL`;
+                        break;
+                    case PropertyType.Float:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_FLOAT`;
+                        this.write(`${data}.float_value = ${jsNumberToCFloat(prop.value)};\n`);
+                        break;
+                    case PropertyType.String:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_STRING`;
+                        this.write(`${data}.string_value = "${prop.value}";\n`);
+                        break;
+                    case PropertyType.Object:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_OBJECT`;
+                        this.write(`${data}.uint32_value = ${prop.id};\n`);
+                        break;
+                    case PropertyType.Color:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_COLOR`;
+                        this.write(`${data}.color_value.r = ${prop.r};\n`);
+                        this.write(`${data}.color_value.g = ${prop.g};\n`);
+                        this.write(`${data}.color_value.b = ${prop.b};\n`);
+                        this.write(`${data}.color_value.a = ${prop.a};\n`);
+                        break;
+                    case PropertyType.File:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_FILE`;
+                        this.write(`${data}.string_value = ${prop.value};\n`);
+                        break;
+                    case PropertyType.Int:
+                        propType = `TILED_OBJECT_PROPERTY_TYPE_INT`;
+                        this.write(`${data}.int_value = ${prop.value};\n`);
+                        break;
+                }
+                this.write(`prop->name = "${key}";\n`);
+                this.write(`prop->type = ${propType};\n`);
+                if(prop !== list[list.length-1]) {
+                    this.write('prop++;\n');
+                }
+            }
+        },'}\n');
+        // this.write(`for(uint32_t i = 0; i < ${count}; i++) {\n`, () => {
+        //     const item = `&${value}[i]`;
+        //     this.write()
+        // },'}\n');
+    }
 }

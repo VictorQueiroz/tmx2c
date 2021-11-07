@@ -1,4 +1,5 @@
 import { Element } from "libxmljs";
+import Properties, { Property } from "./Properties";
 import {
     isElement,
     isNumber,
@@ -19,6 +20,7 @@ export interface IPolygon {
     y: number;
     type: string | null;
     points: [string,string][];
+    properties: ReadonlyMap<string,Property>;
 }
 
 export interface IObject {
@@ -31,6 +33,7 @@ export interface IObject {
     // can improve type safety even further on C code and also know *exactly* what object types to expect.
     // This sounds like a good idea to me right now.
     type: string | null;
+    properties: ReadonlyMap<string,Property>;
 }
 
 export default class ObjectGroup {
@@ -59,6 +62,16 @@ export default class ObjectGroup {
             if(!isNumber(objId) || !isNumber(x) || !isNumber(y)) {
                 return null;
             }
+            const propsEl = objEl.get('properties');
+            let properties: ReadonlyMap<string, Property> | null;
+            if(propsEl) {
+                properties = new Properties(propsEl).read();
+            } else {
+                properties = new Map();
+            }
+            if(properties === null) {
+                return null;
+            }
             if(polygonEl) {
                 if(!isElement(polygonEl)) {
                     return null;
@@ -80,6 +93,7 @@ export default class ObjectGroup {
                 }
                 polygons.push({
                     id: objId,
+                    properties,
                     x,
                     y,
                     type,
@@ -94,6 +108,7 @@ export default class ObjectGroup {
             }
             objects.push({
                 id: objId,
+                properties,
                 type,
                 x,
                 y,
