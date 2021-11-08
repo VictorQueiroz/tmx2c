@@ -5,7 +5,7 @@ import FileManager from "./FileManager";
 import { IObjectGroup } from "../ObjectGroup";
 import { Property, PropertyType } from "../Properties";
 import { ITiledMap } from "../TiledMap";
-import { jsNumberToCFloat } from "./utilities";
+import { getObjectTypeEnumItem, jsNumberToCFloat } from "./utilities";
 
 
 export interface IFunction<T = void> {
@@ -178,7 +178,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                         type: 'struct tiled_layer_t',
                         extra: (layer) => {
                             cs.write('{\n', () => {
-                                cs.write(`const uint32_t length = ${layer.data.length} * sizeof(uint32_t);\n`);
+                                // cs.write(`const uint32_t length = ;\n`);
                                 cs.write(`n->data = calloc(${layer.data.length},sizeof(uint32_t));\n`);
                                 cs.write(`if(!n->data) {\n`, () => {
                                     writeFatalErrorExit();
@@ -203,7 +203,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                                         }
                                     }
                                 },'};\n');
-                                cs.write(`memcpy(n->data,src,length);\n`);
+                                cs.write(`memcpy(n->data,src,${layer.data.length} * sizeof(uint32_t));\n`);
                             },'}\n');
                         }
                     })
@@ -397,11 +397,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                     cs.write(`${currentObjVarName}->position[1] = ${obj.y};\n`);
                     cs.write(`${currentObjVarName}->size[0] = ${obj.width};\n`);
                     cs.write(`${currentObjVarName}->size[1] = ${obj.height};\n`);
-                    if(obj.type !== null) {
-                        cs.write(`${currentObjVarName}->type = "${obj.type}";\n`);
-                    } else {
-                        cs.write(`${currentObjVarName}->type = NULL;\n`);
-                    }
+                    cs.write(`${currentObjVarName}->type = ${getObjectTypeEnumItem(obj.type)};\n`);
                     this.#populateProperties({
                         exit,
                         properties: obj.properties,
@@ -438,11 +434,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                     cs.write(`${curr}->id = ${p.id};\n`);
                     cs.write(`${curr}->position[0] = ${p.x};\n`);
                     cs.write(`${curr}->position[1] = ${p.y};\n`);
-                    if(p.type !== null) {
-                        cs.write(`${curr}->type = "${p.type}";\n`);
-                    } else {
-                        cs.write(`${curr}->type = NULL;\n`);
-                    }
+                    cs.write(`${curr}->type = ${getObjectTypeEnumItem(p.type)};\n`);
                     const pointType = this.#fileManager.require('struct tiled_point_t');
                     // const pointListByteLength = `${p.points.length} * sizeof(${pointType})`;
                     cs.write(`${curr}->point_count = ${p.points.length};\n`);

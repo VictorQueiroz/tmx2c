@@ -2,6 +2,8 @@ import CodeStream from "./CodeStream";
 import FileManager from "./FileManager";
 import MapFileCodeGenerator from "./MapFileCodeGenerator";
 import { ITiledMap } from "../TiledMap";
+import { IObjectGroup } from "../ObjectGroup";
+import { getObjectTypeEnumItem } from "./utilities";
 
 export interface IMapFileGenerationContext {
     cs: CodeStream;
@@ -34,6 +36,7 @@ export interface IFunction<T = void> {
 export default class CodeGenerator extends CodeStream {
     readonly #fileManager;
     readonly #mapFileCodeGenerator;
+    readonly #objectTypes = new Set<string>();
     public constructor() {
         super();
         this.#fileManager = new FileManager({
@@ -53,6 +56,11 @@ export default class CodeGenerator extends CodeStream {
         project?: string;
     }){
         this.#generateHeader();
+
+        for(const map of maps) {
+            this.#updateObjectTypes(map);
+        }
+
         for(const map of maps) {
             this.#mapFileCodeGenerator.generate(map);
         }
@@ -76,9 +84,42 @@ export default class CodeGenerator extends CodeStream {
             ...finalFiles
         ];
     }
+    #updateObjectTypes(map: IMapTarget) {
+        const objectGroups = new Array<IObjectGroup>();
+        objectGroups.push(...map.value.objectGroups);
+        for(const tileset of map.value.tilesets) {
+            for(const tile of tileset.tiles) {
+                if(tile.objectGroup) {
+                    objectGroups.push(tile.objectGroup);
+                }
+            }
+        }
+        for(const group of objectGroups) {
+            for(const obj of group.objects) {
+                if(obj.type) {
+                    this.#objectTypes.add(obj.type);
+                }
+            }
+        }
+    }
     #generateObjectFile() {
         this.#require('<stdint.h>');
         this.#require('<stdbool.h>');
+        this.write(`${this.#define(`enum tiled_object_type_t`)} {\n`, () => {
+            this.write(getObjectTypeEnumItem(null));
+            const objectTypes = Array.from(this.#objectTypes);
+            if(objectTypes.length) {
+                this.append(',\n');
+            }
+            for(const objType of objectTypes) {
+                const id = getObjectTypeEnumItem(objType);
+                this.write(`${id}`);
+                if(objType !== objectTypes[objectTypes.length-1]) {
+                    this.append(',');
+                }
+                this.append('\n');
+            }
+        },'};\n');
         this.write(`${this.#define('enum tiled_object_property_type_t')} {\n`, () => {
             this.write(`TILED_OBJECT_PROPERTY_TYPE_STRING,\n`);
             this.write(`TILED_OBJECT_PROPERTY_TYPE_INT,\n`);
@@ -106,20 +147,20 @@ export default class CodeGenerator extends CodeStream {
                 this.write(`bool bool_value;\n`);
             },'} data;\n');
         },'};\n');
+        const objectTypeEnum = this.#require('enum tiled_object_type_t');
+        const propertyType = this.#require('struct tiled_object_property_t');
         this.write(`${this.#define('struct tiled_object_t')} {\n`, () => {
-            const propertyType = this.#require('struct tiled_object_property_t');
             this.write(`uint32_t id;\n`);
             this.write(`uint32_t position[2];\n`);
             this.write(`uint32_t size[2];\n`);
-            this.write(`const char* type;\n`);
+            this.write(`${objectTypeEnum} type;\n`);
             this.write('uint32_t property_count;\n');
             this.write(`${propertyType}* properties;\n`);
         },'};\n');
         this.write(`${this.#define('struct tiled_polygon_t')} {\n`, () => {
-            const propertyType = this.#require('struct tiled_object_property_t');
             this.write(`uint32_t id;\n`);
             this.write(`uint32_t position[2];\n`);
-            this.write(`const char* type;\n`);
+            this.write(`${objectTypeEnum} type;\n`);
             this.write(`uint32_t point_count;\n`);
             this.write(`struct tiled_point_t* points;\n`);
             this.write('uint32_t property_count;\n');
