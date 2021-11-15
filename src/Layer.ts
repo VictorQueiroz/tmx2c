@@ -1,4 +1,5 @@
 import { Element } from "libxmljs";
+import Properties, { Property } from "./Properties";
 import { isNumber, isString, readInt, readString } from "./utilities";
 
 export interface ILayer {
@@ -7,6 +8,7 @@ export interface ILayer {
     width: number;
     height: number;
     data: Uint32Array;
+    properties: ReadonlyMap<string,Property> | null;
 }
 
 export default class Layer {
@@ -50,8 +52,11 @@ export default class Layer {
         ) {
             return null;
         }
+        const propsEl = this.#element.get('properties');
+        const properties = propsEl ? new Properties(propsEl).read() : null;
         return {
             data,
+            properties,
             id,
             width,
             height,

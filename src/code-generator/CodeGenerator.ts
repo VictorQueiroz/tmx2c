@@ -238,6 +238,12 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t height;\n');
             cs.write('const char* name;\n');
             cs.write('uint32_t* data;\n');
+            cs.write('uint32_t property_count;\n');
+            cs.write(`${this.#require('struct tiled_object_property_t')}* properties;\n`);
+        },'};\n');
+        cs.write(`struct tiled_layer_index_t {\n`, () => {
+            cs.write(`uint32_t index;\n`);
+            cs.write(`void* layer;\n`);
         },'};\n');
         cs.write(`${this.#define('struct tiled_map_t')} {\n`, () => {
             const layerType = 'struct tiled_layer_t';
@@ -251,6 +257,8 @@ export default class CodeGenerator extends CodeStream {
             cs.write(`${layerType}* layers;\n`);
             cs.write('uint32_t object_group_count;\n');
             cs.write(`${this.#require('struct tiled_object_group_t')}** object_groups;\n`);
+            cs.write(`uint32_t layer_index_count;\n`);
+            cs.write(`struct tiled_layer_index_t* layer_indices;\n`);
         },'};\n');
         this.#commit('tiled.h');
     }

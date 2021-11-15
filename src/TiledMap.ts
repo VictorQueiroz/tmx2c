@@ -12,11 +12,13 @@ export interface ITiledMap {
     height: number;
     tileWidth: number;
     tileHeight: number;
+    layerIndices: ReadonlyMap<IObjectGroup | ILayer,number>;
 }
 
 export default class TiledMap {
     readonly #element;
     readonly #currentDirectory;
+    readonly #layerIndices = new Map<ILayer | IObjectGroup, number>();
     public constructor({
         element,
         currentDirectory
@@ -28,6 +30,7 @@ export default class TiledMap {
         this.#currentDirectory = currentDirectory;
     }
     public async read(): Promise<ITiledMap | null> {
+        this.#layerIndices.clear();
         const width = readInt(this.#element, 'width');
         const height = readInt(this.#element, 'height');
         const tileWidth = readInt(this.#element, 'tilewidth');
@@ -51,6 +54,11 @@ export default class TiledMap {
                 return null;
             }
             objectGroups.push(objectGroup);
+            const index = this.#layerElements().indexOf(el);
+            if(index === -1) {
+                return null;
+            }
+            this.#layerIndices.set(objectGroup, index);
         }
         return {
             width,
@@ -59,7 +67,8 @@ export default class TiledMap {
             tileWidth,
             tileHeight,
             tilesets,
-            layers
+            layers,
+            layerIndices: new Map(this.#layerIndices)
         };
     }
     async #readTilesets(): Promise<ReadonlyArray<ITileset> | null> {
@@ -80,17 +89,32 @@ export default class TiledMap {
         }
         return tilesets;
     }
+    #layerElements() {
+        return this.#element.find('(objectgroup|layer)');
+    }
     #readLayers(): ReadonlyArray<ILayer> | null {
-        const layerEls = this.#element.find('layer').map(el => isElement(el) && new Layer(el));
+        const layerEls = this.#element.find('layer').map(el => isElement(el) && {
+            layer: new Layer(el),
+            element: el
+        } as const);
         const layers = new Array<ILayer>();
-        for(const layer of layerEls) {
-            if(!layer) {
+        for(const item of layerEls) {
+            if(!item) {
                 return null;
             }
+            const {
+                layer,
+                element
+            } = item;
             const data = layer.read();
             if(!data) {
                 return null;
             }
+            const index = this.#layerElements().indexOf(element);
+            if(index === -1) {
+                return null;
+            }
+            this.#layerIndices.set(data,index);
             layers.push(data);
         }
         return layers;

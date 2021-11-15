@@ -84,6 +84,12 @@ export default class MapFileCodeGenerator extends CodeStream {
                         property: 'object_groups',
                         type: 'struct tiled_object_group_t',
                         length: map.objectGroups.length
+                    },
+                    {
+                        countProperty: 'layer_index_count',
+                        property: 'layer_indices',
+                        type: 'struct tiled_layer_index_t',
+                        length: map.layerIndices.size
                     }
                 ]) {
                     if(!item.length) {
@@ -156,6 +162,24 @@ export default class MapFileCodeGenerator extends CodeStream {
                         }
                     }),
                     createSetArrayItems({
+                        list: Array.from(map.layerIndices),
+                        values: {},
+                        property: 'layer_indices',
+                        type: 'struct tiled_layer_index_t',
+                        extra([key,value]){
+                            if('objects' in key) {
+                                const index = map.objectGroups.indexOf(key);
+                                assert.strict.ok(index !== -1);
+                                cs.write(`n->layer = &map->object_groups[${index}];\n`);
+                            } else {                                
+                                const index = map.layers.indexOf(key);
+                                assert.strict.ok(index !== -1);
+                                cs.write(`n->layer = &map->layers[${index}];\n`);
+                            }
+                            cs.write(`n->index = ${value};\n`);
+                        }
+                    }),
+                    createSetArrayItems({
                         list: map.objectGroups,
                         values: {},
                         property: 'object_groups',
@@ -171,6 +195,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                     createSetArrayItems({
                         list: map.layers,
                         values: {
+                            id: layer => layer.id,
                             width: layer => layer.width,
                             height: layer => layer.height
                         },
@@ -183,6 +208,12 @@ export default class MapFileCodeGenerator extends CodeStream {
                                 cs.write(`if(!n->data) {\n`, () => {
                                     writeFatalErrorExit();
                                 },'}\n');
+                                this.#populateProperties({
+                                    exit: writeFatalErrorExit,
+                                    properties: layer.properties,
+                                    count: `n->property_count`,
+                                    value: `n->properties`
+                                });
                                 // TODO: Set the entire n->data block to 0 and only set the offsets which actually contain something
                                 // to avoid submitting a bunch of unnecessary zeroes
                                 cs.write('const uint32_t src[] = {\n', () => {
@@ -245,8 +276,11 @@ export default class MapFileCodeGenerator extends CodeStream {
                  * Free layers
                  */
                 cs.write('for(i = 0; i < map->layer_count; i++) {\n', () => {
-                    cs.write(`free(map->layers[i].data);\n`);
-                    cs.write('map->layers[i].data = NULL;\n');
+                    const layerVarName = `map->layers[i]`;
+                    cs.write(`free(${layerVarName}.properties);\n`);
+                    cs.write(`${layerVarName}.properties = NULL;\n`);
+                    cs.write(`free(${layerVarName}.data);\n`);
+                    cs.write(`${layerVarName}.data = NULL;\n`);
                 },'}\n');
                 cs.write(`free(map->layers);\n`);
                 cs.write('map->layers = NULL;\n');
@@ -275,6 +309,8 @@ export default class MapFileCodeGenerator extends CodeStream {
                 },'}\n');
                 cs.write('free(map->tilesets);\n');
                 cs.write('map->tilesets = NULL;\n');
+                cs.write(`free(map->layer_indices);\n`);
+                cs.write(`map->layer_indices = NULL;\n`);
                 cs.write('free(map);\n');
                 cs.write('*map_ptr = NULL;\n');
             }
@@ -376,6 +412,7 @@ export default class MapFileCodeGenerator extends CodeStream {
         cs.write(`if(!${value}) {\n`, () => {
             exit();
         },'}\n');
+        cs.write(`${value}->id = ${objectGroup.id};\n`);
         if(objectGroup.objects.length) {
             const objectType = this.#fileManager.require('struct tiled_object_t');
             cs.write(`${objectCountVarName} = ${objectGroup.objects.length};\n`);
@@ -469,12 +506,12 @@ export default class MapFileCodeGenerator extends CodeStream {
         properties,
         count
     }: {
-        properties: ReadonlyMap<string,Property>;
+        properties: ReadonlyMap<string,Property> | null;
         value: string;
         count: string;
         exit(): void;
     }) {
-        if(!properties.size) {
+        if(properties === null || !properties.size) {
             this.write(`${count} = 0;\n`);
             this.write(`${value} = NULL;\n`);
             return;
