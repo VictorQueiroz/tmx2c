@@ -66,6 +66,10 @@ export default class MapFileCodeGenerator extends CodeStream {
                 assert.strict.ok(freeMap);
                 cs.write(`${tiledMapType}* map = calloc(1, sizeof(${tiledMapType}));\n`);
                 cs.write('if(!map) return NULL;\n');
+                cs.write(`map->tile_width = ${map.tileWidth};\n`);
+                cs.write(`map->tile_height = ${map.tileHeight};\n`);
+                cs.write(`map->width = ${map.width};\n`);
+                cs.write(`map->height = ${map.height};\n`);
                 for(const item of [
                     {
                         countProperty: 'tileset_count',
