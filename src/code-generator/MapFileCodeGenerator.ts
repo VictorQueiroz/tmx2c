@@ -430,6 +430,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                 cs.write(`${objectType}* ${currentObjVarName} = ${objectsVarName};\n`);
                 for(const obj of objectGroup.objects) {
                     cs.write(`${currentObjVarName}->id = ${obj.id};\n`);
+                    cs.write(`${currentObjVarName}->gid = ${obj.gid === null ? 'UINT32_MAX' : obj.gid};\n`);
                     cs.write(`${currentObjVarName}->position[0] = ${obj.x};\n`);
                     cs.write(`${currentObjVarName}->position[1] = ${obj.y};\n`);
                     cs.write(`${currentObjVarName}->size[0] = ${obj.width};\n`);

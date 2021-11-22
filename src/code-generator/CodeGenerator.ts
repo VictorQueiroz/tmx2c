@@ -151,6 +151,10 @@ export default class CodeGenerator extends CodeStream {
         const propertyType = this.#require('struct tiled_object_property_t');
         this.write(`${this.#define('struct tiled_object_t')} {\n`, () => {
             this.write(`uint32_t id;\n`);
+            this.write(`/**\n`);
+            this.write(` * Will be UINT32_MAX if \`gid\` property is not set.\n`);
+            this.write(` */\n`);
+            this.write(`uint32_t gid;\n`);
             this.write(`uint32_t position[2];\n`);
             this.write(`uint32_t size[2];\n`);
             this.write(`${objectTypeEnum} type;\n`);

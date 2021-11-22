@@ -29,6 +29,7 @@ export interface IObject {
     y: number;
     width: number;
     height: number;
+    gid: number | null;
     // TODO: maybe, during code generation, we could create an enum on C automatically based on the object types. This way we
     // can improve type safety even further on C code and also know *exactly* what object types to expect.
     // This sounds like a good idea to me right now.
@@ -103,10 +104,12 @@ export default class ObjectGroup {
             }
             const width = readInt(objEl,'width');
             const height = readInt(objEl,'height');
+            const gid = readInt(objEl,'gid');
             if(!isNumber(width) || !isNumber(height)) {
                 return null;
             }
             objects.push({
+                gid,
                 id: objId,
                 properties,
                 type,
