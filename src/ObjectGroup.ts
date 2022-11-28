@@ -59,7 +59,7 @@ export default class ObjectGroup {
             const x = readInt(objEl,'x');
             const y = readInt(objEl,'y');
             const polygonEl = objEl.get('polygon');
-            const type = readString(objEl,'type');
+            const type = readString(objEl,'type') ?? readString(objEl,'class');
             if(!isNumber(objId) || !isNumber(x) || !isNumber(y)) {
                 return null;
             }

@@ -3,3 +3,8 @@
 /generated
 /out
 /.vscode
+/**/*.js
+/**/*.map
+/**/*.d.ts
+tsconfig.tsbuildinfo
+/tmx2c-*.tgz

@@ -10,6 +10,7 @@ import {
     CodeStream
 } from '../src';
 import { ITiledMap } from '../src/TiledMap';
+import {version} from '../package.json';
 
 function printHelp() {
     const cs = new CodeStream();
@@ -23,6 +24,7 @@ function printHelp() {
         cs.write('--delete-destination-directory        Force destination directory deletion\n');
         cs.write('--out-dir, -o                         Output directory. Defaults to: generated\n');
         cs.write('--library-name                        Library name. Defaults to: maps\n');
+        cs.write('--version                             Library version\n');
         cs.write('-h, --help                            Print this\n');
     });
     process.stdout.write(cs.value());
@@ -41,7 +43,10 @@ function printHelp() {
     while(args.length) {
         const arg = args[0];
         assert.strict.ok(typeof arg === 'string');
-        if(arg === '--library-name') {
+        if(arg === '--version') {
+            console.log('tmx2c version %s',version);
+            break;
+        } else if(arg === '--library-name') {
             args.shift();
             const newLibraryName = args.shift();
             assert.strict.ok(typeof newLibraryName === 'string');

@@ -205,7 +205,7 @@ export default class CodeGenerator extends CodeStream {
     }) {
         this.write(`project(${project} C)\n`);
         this.write(`set(CMAKE_C_STANDARD 99)\n`);
-        this.write(`cmake_minimum_required(VERSION 3.20)\n`);
+        this.write(`cmake_minimum_required(VERSION 3.0)\n`);
         this.write(`add_library(\n`, () => {
             this.write(`${libraryName} SHARED\n`);
             this.write(`${Array.from(files).map(f => f.path).join(' ')}\n`);

@@ -2,5 +2,12 @@
   "extends":"../tsconfig.base.json",
   "references": [
     {"path":"../src"}
-  ]
+  ],
+  "include": [
+    "index.ts",
+    "../package.json"
+  ],
+  "compilerOptions": {
+    "resolveJsonModule": true
+  }
 }
