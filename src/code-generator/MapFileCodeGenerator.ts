@@ -238,7 +238,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                                         }
                                     }
                                 },'};\n');
-                                cs.write(`memcpy(n->data,src,${layer.data.length} * sizeof(uint32_t));\n`);
+                                cs.write(`memcpy(n->data,src,${layer.data.length} * sizeof(uint8_t));\n`);
                             },'}\n');
                         }
                     })
