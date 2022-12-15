@@ -241,7 +241,7 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t width;\n');
             cs.write('uint32_t height;\n');
             cs.write('const char* name;\n');
-            cs.write('uint32_t* data;\n');
+            cs.write('uint8_t* data;\n');
             cs.write('uint32_t property_count;\n');
             cs.write(`${this.#require('struct tiled_object_property_t')}* properties;\n`);
         },'};\n');
