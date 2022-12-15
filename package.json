@@ -1,6 +1,6 @@
 {
   "name": "tmx2c",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "",
   "author": "Victor Queiroz <victorcqueirozg@gmail.com>",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "tmx2c": "./bin/index.js"
   },
   "scripts": {
-    "build":"npx tsc -b bin src",
+    "build": "npx tsc -b bin src",
     "prepack": "yarn run build",
     "prepublishOnly": "yarn run build"
   },
