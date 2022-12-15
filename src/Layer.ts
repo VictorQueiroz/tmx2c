@@ -7,7 +7,7 @@ export interface ILayer {
     name: string;
     width: number;
     height: number;
-    data: Uint32Array;
+    data: Uint8Array;
     properties: ReadonlyMap<string,Property> | null;
 }
 
@@ -37,10 +37,10 @@ export default class Layer {
         }
         const original = Buffer.from(contents,'base64');
         // FIXME: Of course this will only work for LE CPUs
-        const data = new Uint32Array(
+        const data = new Uint8Array(
             original.buffer,
             original.byteOffset,
-            original.byteLength / Uint32Array.BYTES_PER_ELEMENT
+            original.byteLength / Uint8Array.BYTES_PER_ELEMENT
         );
         const name = readString(this.#element,'name');
         const id = readInt(this.#element,'id');

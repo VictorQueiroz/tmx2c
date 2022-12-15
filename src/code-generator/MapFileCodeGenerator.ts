@@ -220,7 +220,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                                 });
                                 // TODO: Set the entire n->data block to 0 and only set the offsets which actually contain something
                                 // to avoid submitting a bunch of unnecessary zeroes
-                                cs.write('const uint32_t src[] = {\n', () => {
+                                cs.write('const uint8_t src[] = {\n', () => {
                                     let col = 0;
                                     for(let i = 0; i < layer.data.length; i++) {
                                         const n = layer.data[i];
