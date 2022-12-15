@@ -35,7 +35,6 @@
     "typescript": "4.4.x"
   },
   "dependencies": {
-    "libxmljs": "0.19.x",
-    "tmx2c": "file:tmx2c-0.0.18.tgz"
+    "libxmljs": "0.19.x"
   }
 }
