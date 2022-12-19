@@ -302,14 +302,16 @@ export default class MapFileCodeGenerator extends CodeStream {
                 cs.write(`struct tiled_tileset_tile_t* tile;\n`);
                 cs.write('for(i = 0; i < map->tileset_count; i++) {\n', () => {
                     cs.write(`tileset = &map->tilesets[i];\n`);
-                    cs.write(`for(uint32_t j = 0; j < tileset->tile_count; j++) {\n`, () => {
-                        cs.write('tile = &tileset->tiles[j];\n');
-                        this.#freeObjectGroup({
-                            value: `tile->object_group`
-                        });
-                        cs.write('free(tile->properties);\n');
-                    },'}\n');
-                    cs.write('free(tileset->tiles);\n');
+                    cs.write('if(tileset->tiles != NULL) {\n', () => {
+                        cs.write(`for(uint32_t j = 0; j < tileset->tile_count; j++) {\n`, () => {
+                            cs.write('tile = &tileset->tiles[j];\n');
+                            this.#freeObjectGroup({
+                                value: `tile->object_group`
+                            });
+                            cs.write('free(tile->properties);\n');
+                        },'}\n');
+                        cs.write('free(tileset->tiles);\n');
+                    },'}\n')
                 },'}\n');
                 cs.write('free(map->tilesets);\n');
                 cs.write('map->tilesets = NULL;\n');
