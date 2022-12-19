@@ -126,8 +126,8 @@ export default class MapFileCodeGenerator extends CodeStream {
                         type: 'struct tiled_tileset_t',
                         property: 'tilesets',
                         extra: tileset => {
-                            if(!tileset.tileCount) {
-                                cs.write(`n->tile_count = 0;\n`);
+                            if(!tileset.tileCount || (tileset.tileCount && !tileset.tiles.length)) {
+                                cs.write(`n->tile_count = ${tileset.tileCount};\n`);
                                 cs.write(`n->tiles = NULL;\n`);
                                 return;
                             }
