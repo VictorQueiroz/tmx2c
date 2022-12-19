@@ -119,7 +119,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                             source: tileset => `"${tileset.image.source}"`,
                             tile_width: tileset => tileset.tileWidth,
                             columns: tileset => tileset.columns,
-                            tile_count: tileset => tileset.tileCount,
+                            // tile_count: tileset => tileset.tileCount,
                             tile_height: tileset => tileset.tileHeight,
                             firstgid: tileset => tileset.firstgid
                         },
@@ -127,8 +127,8 @@ export default class MapFileCodeGenerator extends CodeStream {
                         property: 'tilesets',
                         extra: tileset => {
                             if(!tileset.tiles.length) {
-                                cs.write(`n->tiles = NULL;\n`);
                                 cs.write(`n->tile_count = 0;\n`);
+                                cs.write(`n->tiles = NULL;\n`);
                                 return;
                             }
                             cs.write(`n->tile_count = ${tileset.tiles.length};\n`);
