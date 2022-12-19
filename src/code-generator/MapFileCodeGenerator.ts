@@ -208,7 +208,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                         extra: (layer) => {
                             cs.write('{\n', () => {
                                 // cs.write(`const uint32_t length = ;\n`);
-                                cs.write(`n->data = calloc(${layer.data.length},sizeof(uint32_t));\n`);
+                                cs.write(`n->data = calloc(${layer.data.length},sizeof(uint8_t));\n`);
                                 cs.write(`if(!n->data) {\n`, () => {
                                     writeFatalErrorExit();
                                 },'}\n');
