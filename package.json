@@ -1,6 +1,6 @@
 {
   "name": "tmx2c",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "Transform your .tmx files into a C project",
   "author": "Victor Queiroz <victorcqueirozg@gmail.com>",
   "license": "MIT",
