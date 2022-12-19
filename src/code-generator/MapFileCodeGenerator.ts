@@ -86,7 +86,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                     {
                         countProperty: 'object_group_count',
                         property: 'object_groups',
-                        type: 'struct tiled_object_group_t',
+                        type: 'struct tiled_object_group_t*',
                         length: map.objectGroups.length
                     },
                     {
