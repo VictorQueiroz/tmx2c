@@ -260,7 +260,7 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t layer_count;\n');
             cs.write(`${layerType}* layers;\n`);
             cs.write('uint32_t object_group_count;\n');
-            cs.write(`${this.#require('struct tiled_object_group_t')}** object_groups;\n`);
+            cs.write(`${this.#require('struct tiled_object_group_t')}* object_groups;\n`);
             cs.write(`uint32_t layer_index_count;\n`);
             cs.write(`struct tiled_layer_index_t* layer_indices;\n`);
         },'};\n');
