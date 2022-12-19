@@ -126,12 +126,12 @@ export default class MapFileCodeGenerator extends CodeStream {
                         type: 'struct tiled_tileset_t',
                         property: 'tilesets',
                         extra: tileset => {
-                            if(!tileset.tiles.length) {
+                            if(!tileset.tileCount) {
                                 cs.write(`n->tile_count = 0;\n`);
                                 cs.write(`n->tiles = NULL;\n`);
                                 return;
                             }
-                            cs.write(`n->tile_count = ${tileset.tiles.length};\n`);
+                            cs.write(`n->tile_count = ${tileset.tileCount};\n`);
                             cs.write(`n->tiles = calloc(n->tile_count, sizeof(struct tiled_tileset_tile_t));\n`);
                             cs.write(
                                 `if(n->tiles == NULL) {\n`,
