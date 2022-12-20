@@ -199,7 +199,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                     createSetArrayItems({
                         list: map.layers,
                         values: {
-                            name: layer => layer.name,
+                            name: layer => `"${layer.name}"`,
                             id: layer => layer.id,
                             width: layer => layer.width,
                             height: layer => layer.height
