@@ -126,15 +126,16 @@ export default class MapFileCodeGenerator extends CodeStream {
                         type: 'struct tiled_tileset_t',
                         property: 'tilesets',
                         extra: tileset => {
-                            if(!tileset.tileCount || (tileset.tileCount && !tileset.tiles.length)) {
-                                cs.write(`n->tile_count = ${tileset.tileCount};\n`);
-                                cs.write(`n->tiles = NULL;\n`);
+                            cs.write(`n->tile_count = ${tileset.tileCount};\n`);
+                            if(!tileset.tiles.length) {
+                                cs.write(`n->tile_list = NULL;\n`);
+                                cs.write(`n->tile_list_count = NULL;\n`);
                                 return;
                             }
-                            cs.write(`n->tile_count = ${tileset.tileCount};\n`);
-                            cs.write(`n->tiles = calloc(n->tile_count, sizeof(struct tiled_tileset_tile_t));\n`);
+                            cs.write(`n->tile_list_count = ${tileset.tiles.length};\n`);
+                            cs.write(`n->tile_list = calloc(n->tile_list_count, sizeof(struct tiled_tileset_tile_t));\n`);
                             cs.write(
-                                `if(n->tiles == NULL) {\n`,
+                                `if(n->tile_list == NULL) {\n`,
                                 () => {
                                     writeFatalErrorExit();
                                 },
@@ -142,7 +143,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                             );
                             cs.write('{\n', () => {
                                 const tileVarName = `tile_`;
-                                cs.write(`struct tiled_tileset_tile_t* ${tileVarName} = n->tiles;\n`);
+                                cs.write(`struct tiled_tileset_tile_t* ${tileVarName} = n->tile_list;\n`);
                                 for(const tile of tileset.tiles) {
                                     cs.write(`// ${tileset.tiles.indexOf(tile)}\n`);
                                     cs.write(`${tileVarName}->id = ${tile.id};\n`);
@@ -303,16 +304,14 @@ export default class MapFileCodeGenerator extends CodeStream {
                 cs.write(`struct tiled_tileset_tile_t* tile;\n`);
                 cs.write('for(i = 0; i < map->tileset_count; i++) {\n', () => {
                     cs.write(`tileset = &map->tilesets[i];\n`);
-                    cs.write('if(tileset->tiles != NULL) {\n', () => {
-                        cs.write(`for(uint32_t j = 0; j < tileset->tile_count; j++) {\n`, () => {
-                            cs.write('tile = &tileset->tiles[j];\n');
-                            this.#freeObjectGroup({
-                                value: `tile->object_group`
-                            });
-                            cs.write('free(tile->properties);\n');
-                        },'}\n');
-                        cs.write('free(tileset->tiles);\n');
-                    },'}\n')
+                    cs.write(`for(uint32_t j = 0; j < tileset->tile_list_count; j++) {\n`, () => {
+                        cs.write('tile = &tileset->tile_list[j];\n');
+                        this.#freeObjectGroup({
+                            value: `tile->object_group`
+                        });
+                        cs.write('free(tile->properties);\n');
+                    },'}\n');
+                    cs.write('free(tileset->tile_list);\n');
                 },'}\n');
                 cs.write('free(map->tilesets);\n');
                 cs.write('map->tilesets = NULL;\n');

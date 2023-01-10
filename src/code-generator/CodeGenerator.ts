@@ -234,7 +234,8 @@ export default class CodeGenerator extends CodeStream {
             cs.write('uint32_t tile_height;\n');
             cs.write('uint32_t firstgid;\n');
             cs.write('uint32_t tile_count;\n');
-            cs.write(`${tileType}* tiles;\n`);
+            cs.write('uint32_t tile_list_count;\n');
+            cs.write(`${tileType}* tile_list;\n`);
         },'};\n');
         cs.write(`${this.#define('struct tiled_layer_t')} {\n`, () => {
             cs.write('uint32_t id;\n');
