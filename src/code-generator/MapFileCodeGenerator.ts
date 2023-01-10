@@ -129,7 +129,7 @@ export default class MapFileCodeGenerator extends CodeStream {
                             cs.write(`n->tile_count = ${tileset.tileCount};\n`);
                             if(!tileset.tiles.length) {
                                 cs.write(`n->tile_list = NULL;\n`);
-                                cs.write(`n->tile_list_count = NULL;\n`);
+                                cs.write(`n->tile_list_count = 0;\n`);
                                 return;
                             }
                             cs.write(`n->tile_list_count = ${tileset.tiles.length};\n`);
