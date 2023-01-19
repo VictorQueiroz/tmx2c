@@ -249,7 +249,7 @@ export default class CodeGenerator extends CodeStream {
         cs.write(`struct tiled_layer_index_t {\n`, () => {
             cs.write(`uint32_t index;\n`);
             cs.write(`${this.#require('struct tiled_layer_t')}* layer;\n`);
-            cs.write(`${this.#require('struct tiled_object_group_t')}** object_group;\n`);
+            cs.write(`${this.#require('struct tiled_object_group_t')}* object_group;\n`);
         },'};\n');
         cs.write(`${this.#define('struct tiled_map_t')} {\n`, () => {
             const layerType = 'struct tiled_layer_t';
