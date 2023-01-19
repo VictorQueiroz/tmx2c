@@ -167,6 +167,19 @@ export default class MapFileCodeGenerator extends CodeStream {
                         }
                     }),
                     createSetArrayItems({
+                        list: map.objectGroups,
+                        values: {},
+                        property: 'object_groups',
+                        type: 'struct tiled_object_group_t*',
+                        extra: objectGroup => {
+                            this.#populateObjectGroupWith({
+                                exit: writeFatalErrorExit,
+                                value: '(*n)',
+                                objectGroup
+                            });
+                        }
+                    }),
+                    createSetArrayItems({
                         list: Array.from(map.layerIndices),
                         values: {},
                         property: 'layer_indices',
@@ -184,19 +197,6 @@ export default class MapFileCodeGenerator extends CodeStream {
                                 cs.write(`n->object_group = NULL;\n`);
                             }
                             cs.write(`n->index = ${value};\n`);
-                        }
-                    }),
-                    createSetArrayItems({
-                        list: map.objectGroups,
-                        values: {},
-                        property: 'object_groups',
-                        type: 'struct tiled_object_group_t*',
-                        extra: objectGroup => {
-                            this.#populateObjectGroupWith({
-                                exit: writeFatalErrorExit,
-                                value: '(*n)',
-                                objectGroup
-                            });
                         }
                     }),
                     createSetArrayItems({
