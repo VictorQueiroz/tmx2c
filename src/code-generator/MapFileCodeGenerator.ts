@@ -175,11 +175,13 @@ export default class MapFileCodeGenerator extends CodeStream {
                             if('objects' in key) {
                                 const index = map.objectGroups.indexOf(key);
                                 assert.strict.ok(index !== -1);
-                                cs.write(`n->layer = &map->object_groups[${index}];\n`);
+                                cs.write(`n->object_group = &map->object_groups[${index}];\n`);
+                                cs.write(`n->layer = NULL;\n`);
                             } else {                                
                                 const index = map.layers.indexOf(key);
                                 assert.strict.ok(index !== -1);
                                 cs.write(`n->layer = &map->layers[${index}];\n`);
+                                cs.write(`n->object_group = NULL;\n`);
                             }
                             cs.write(`n->index = ${value};\n`);
                         }
