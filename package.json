@@ -35,6 +35,7 @@
     "typescript": "4.4.x"
   },
   "dependencies": {
+    "codestreamjs": "0.x",
     "libxmljs": "0.19.x"
   }
 }

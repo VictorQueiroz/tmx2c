@@ -15,4 +15,5 @@ generate:
 		bin \
 		"test/Kings and Pigs/map.tmx":level_1 \
 		"test/Kings and Pigs/map2.tmx":level_2 \
-		--delete-destination-directory
+		--delete-destination-directory \
+		--binary-directory build

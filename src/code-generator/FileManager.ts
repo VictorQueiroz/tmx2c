@@ -1,5 +1,5 @@
+import CodeStream from "codestreamjs";
 import path from "path";
-import CodeStream from './CodeStream';
 
 export interface IGeneratedFile {
     path: string;

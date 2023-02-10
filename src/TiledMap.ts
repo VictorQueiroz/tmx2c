@@ -5,6 +5,7 @@ import Layer, { ILayer } from "./Layer";
 import ObjectGroup, { IObjectGroup } from "./ObjectGroup";
 
 export interface ITiledMap {
+    originalFile: string;
     layers: ReadonlyArray<ILayer>;
     tilesets: ReadonlyArray<ITileset>;
     objectGroups: ReadonlyArray<IObjectGroup>;
@@ -19,13 +20,17 @@ export default class TiledMap {
     readonly #element;
     readonly #currentDirectory;
     readonly #layerIndices = new Map<ILayer | IObjectGroup, number>();
+    readonly #originalFile;
     public constructor({
         element,
+        originalFile,
         currentDirectory
     }: {
         element: Element;
+        originalFile: string;
         currentDirectory: string;
     }) {
+        this.#originalFile = originalFile;
         this.#element = element;
         this.#currentDirectory = currentDirectory;
     }
@@ -64,6 +69,7 @@ export default class TiledMap {
             width,
             height,
             objectGroups,
+            originalFile: this.#originalFile,
             tileWidth,
             tileHeight,
             tilesets,

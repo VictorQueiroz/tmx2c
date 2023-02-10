@@ -1,11 +1,11 @@
 import assert from "assert";
 import path from "path";
-import CodeStream from "./CodeStream";
 import FileManager from "./FileManager";
 import { IObjectGroup } from "../ObjectGroup";
 import { Property, PropertyType } from "../Properties";
 import { ITiledMap } from "../TiledMap";
 import { getObjectTypeEnumItem, jsNumberToCFloat } from "./utilities";
+import CodeStream from "codestreamjs";
 
 
 export interface IFunction<T = void> {
@@ -116,10 +116,18 @@ export default class MapFileCodeGenerator extends CodeStream {
                     createSetArrayItems({
                         list: Array.from(map.tilesets).sort((t1,t2) => t2.firstgid - t1.firstgid),
                         values: {
-                            source: tileset => `"${tileset.image.source}"`,
+                            source: tileset => {
+                                let out: string;
+                                const source = path.resolve(path.dirname(map.originalFile),tileset.image.source);
+                                if(this.#binaryDirectory !== null) {
+                                    out = path.relative(this.#binaryDirectory,source);
+                                } else {
+                                    out = tileset.image.source;
+                                }
+                                return `"${out}"`;
+                            },
                             tile_width: tileset => tileset.tileWidth,
                             columns: tileset => tileset.columns,
-                            // tile_count: tileset => tileset.tileCount,
                             tile_height: tileset => tileset.tileHeight,
                             firstgid: tileset => tileset.firstgid
                         },
@@ -325,12 +333,15 @@ export default class MapFileCodeGenerator extends CodeStream {
         }
     ];
     readonly #fileManager;
+    readonly #binaryDirectory;
     readonly #methodMap = new Map(this.#methodList.map(m => [m.id,m]));
-    public constructor(options: {
+    public constructor({binaryDirectory, fileManager}: {
         fileManager: FileManager;
+        binaryDirectory: string | null;
     }) {
-        super(options.fileManager);
-        this.#fileManager = options.fileManager;
+        super(fileManager);
+        this.#binaryDirectory = binaryDirectory;
+        this.#fileManager = fileManager;
     }
     public generateTestFile(maps: IMapTarget[]) {
         for(const map of maps) {

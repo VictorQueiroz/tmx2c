@@ -147,6 +147,11 @@ chownr@^2.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
+codestreamjs@0.x:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/codestreamjs/-/codestreamjs-0.0.1.tgz#b2331fb444d3ea6cf200c4955297bab36a926b1c"
+  integrity sha512-likplgg+WAdWTpd55NStGprGi0LUBcicZzzobzfcWE1lD11IHSMcIsENKiRRic68eUTMXq/FTsxcJJdmE2+TTA==
+
 color-support@^1.1.2:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/color-support/-/color-support-1.1.3.tgz#93834379a1cc9a0c61f82f52f0d04322251bd5a2"

@@ -6,11 +6,11 @@ import path from 'path';
 import fs from 'fs';
 import {
     TiledMap,
-    CodeGenerator,
-    CodeStream
+    CodeGenerator
 } from '../src';
 import { ITiledMap } from '../src/TiledMap';
 import {version} from '../package.json';
+import CodeStream from 'codestreamjs';
 
 function printHelp() {
     const cs = new CodeStream();
@@ -25,6 +25,7 @@ function printHelp() {
         cs.write('--out-dir, -o                         Output directory. Defaults to: generated\n');
         cs.write('--library-name                        Library name. Defaults to: maps\n');
         cs.write('--version                             Library version\n');
+        cs.write('--binary-directory                    Defines the place where the final game binary will be to adjust the paths accordingly\n');
         cs.write('-h, --help                            Print this\n');
     });
     process.stdout.write(cs.value());
@@ -38,6 +39,7 @@ function printHelp() {
     }>();
     let libraryName = 'maps';
     let outDir: string | null = null;
+    let binaryDirectory: string | null = null;
     let deleteDestinationDirectory = false;
     const args = Array.from(process.argv).slice(2);
     while(args.length) {
@@ -54,6 +56,11 @@ function printHelp() {
         } else if(arg === '--delete-destination-directory') {
             args.shift();
             deleteDestinationDirectory = true;
+        } else if(arg === '--binary-directory') {
+            args.shift();
+            const maybeBinaryDirectory = args.shift();
+            assert.strict.ok(maybeBinaryDirectory);
+            binaryDirectory = path.resolve(process.cwd(), maybeBinaryDirectory);
         } else if(arg.endsWith('.tmx')) {
             args.shift();
             mapFiles.push({
@@ -102,13 +109,16 @@ function printHelp() {
         assert.strict.ok(root);
         assert.strict.equal('map',root.name());
         const map = await new TiledMap({
+            originalFile: mapFile.path,
             element: root,
             currentDirectory: path.dirname(mapFile.path)
         }).read();
         assert.strict.ok(map !== null);
         maps.set(mapFile.name,map);
     }
-    const generator = new CodeGenerator();
+    const generator = new CodeGenerator({
+        binaryDirectory
+    });
     const files = generator.generate({
         maps: Array.from(maps).map(([name,value]) => ({
             name,

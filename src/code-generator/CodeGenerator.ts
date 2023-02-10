@@ -1,4 +1,4 @@
-import CodeStream from "./CodeStream";
+import CodeStream from "codestreamjs";
 import FileManager from "./FileManager";
 import MapFileCodeGenerator from "./MapFileCodeGenerator";
 import { ITiledMap } from "../TiledMap";
@@ -37,13 +37,16 @@ export default class CodeGenerator extends CodeStream {
     readonly #fileManager;
     readonly #mapFileCodeGenerator;
     readonly #objectTypes = new Set<string>();
-    public constructor() {
+    public constructor({binaryDirectory}: {
+        binaryDirectory: string | null;
+    }) {
         super();
         this.#fileManager = new FileManager({
             parent: this
         });
         this.#mapFileCodeGenerator = new MapFileCodeGenerator({
-            fileManager: this.#fileManager
+            fileManager: this.#fileManager,
+            binaryDirectory
         });
     }
     public generate({
